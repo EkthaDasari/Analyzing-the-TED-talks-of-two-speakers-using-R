@@ -1,6 +1,6 @@
 ---
-title: "MA331-Coursework"
-author: "2110373-Ektha Sai Reddy-Dasari-MA331"
+title: "Coursework"
+author: "author"
 date: "11/03/2022"
 output:
   html_document: default
