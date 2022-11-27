@@ -1,0 +1,153 @@
+---
+title: "MA331-Coursework"
+author: "2110373-Ektha Sai Reddy-Dasari-MA331"
+date: "11/03/2022"
+output:
+  html_document: default
+subtitle: Text analytics of the TED talks by John McWhorter and Bill Gates
+---
+
+```{r setup, include=FALSE}
+options(repos = list(CRAN="http://cran.rstudio.com/"))
+knitr::opts_chunk$set(echo = TRUE)
+
+#list of packages and libraries required and loading data
+library(dsEssex)
+library(dplyr)
+library(tidyverse)
+library(tidytext)
+library(ggplot2)
+library(ggrepel)
+#library(xlsx)
+#install.packages("devtools")
+#devtools::install_github("thomasp85/patchwork")
+library(patchwork)
+
+data("ted_talks") #loading data
+```
+
+<span style="color:blue;">**INTRODUCTION**</span>
+
+In this report we are going to perform text and sentiment analytics on the TED talks given by two speakers, “Bill Gates” and “John McWhorter”. Bill Gates have given many TED talks and, in our report, we consider the following TED talks. “Mosquitoes, malaria and education” is one of the TED talks given by Bill Gates in 2009. In this TED talks, he talks about how malaria caused the deaths of many people and how people learnt about mosquitoes being the cause of malaria and the prevention methods and techniques used to stop the spread of malaria. Along with this he also talked about many instances where the teaching practices can be changed so that each student can be good at studying or understanding the concepts. In 2010 he had given another TED talk on “Innovating to zero!” in which he talked about the need for miracles to avoid planetary catastrophe and the equational ways through which we can bring carbon emissions to zero level. In 2011 he talked about “How state budgets are breaking US schools” where he talks about America’s school systems financing. He says that state budgets are riddled with accounting tricks that disguise the true cost of health care and pensions and weighted with worsening deficits which is financing of education at the losing end. In 2014 Bill and Melinda Gates talks about how they made the big decision of giving their Microsoft wealth back to the society and what all social problems they have addressed with this private foundation and their achievements and targets. Along with this they talked about their marriage, their children, their failure and the satisfaction of giving most of their money away in their TED talk “Why giving away our wealth has been the most satisfying thing we’ve done”. The last TED talk we are considering is “The next outbreak? We’re not ready “which was given in 2015, in which Bill Gates talks about how a viral disease can be stopped before turning into an epidemic by being ready for the outbreak like giving existing vaccines to kids at the required times, making more medical people with expertise and who are ready to go during an outbreak.
+The second speaker is John McWhorter, the TED talks given by him are “Txtng is killing language. JK!!!” and “4 reasons to learn a new language” in years 2013 and 2016 respectively. In his talk in 2013, he talked about how texting in recent times has turned into a writing language where we write like how we speak and called it as fingered speech, and how texting language is being evolved from time and time which can be called as a linguistic miracle. In the other talk, he talks about why we should learn a different language even though English is being used as a communication language everywhere. He also talks about what is the importance of learning new languages. We can get more information about the talks from the TED website https://www.ted.com/.
+We compare the talks of these two speakers and perform an analysis to obtain the most frequently used words of these two speakers in the above mentioned talks and also obtain the sentiments related to these words.
+
+<span style="color:blue;">**METHOD**</span>
+ 
+The data set “ted_talks” is loaded from the “dsEssex” package. After loading the data, the information present under text column of the data set is converted in to tokens in order to perform text analytics on the given data set. Once the data is tokenized, the stop words such as and, or, the etc., are removed from the tokens as these words don’t carry important information. We can get these stop words by using a function called “get_stopwords()”. This filtered data is stored in a variable called “ted_nostop”. From this filtered data we need to filter the talks related to “Bill Gates” and “John McWhorter” and will be plotting the top 15 words of these two speakers separately. The next step after individual plots is plotting of the frequently used words of the two speakers, when combined have a sum more than 25 with Bill Gates on x-axis and John McWhorter on y-axis. 
+The next step in our analysis is getting the sentiments for the frequently used words of Bill Gates and John McWhorter excluding stop words. Sentiments are obtained by using the “get_sentiments()” function and the lexicon “nrc”. Once the sentiments for each speaker are obtained they are converted into a wider table form using “pivot_wider()” function.
+Once the sentiments for words are obtained we plot the sentiment count of the two speakers by using sentiments factor as color code.
+After the sentiments are obtained we are calculating the Odds Ratio and Log of the Odds ratio for the two speakers and present the log odds ratio graphically from which we can identify which speaker carry which emotion more.
+
+<span style="color:blue;">**RESULTS**</span>
+
+Initially the whole text is tokenized into tokens and the stopwords are removed from the data set, as a result we have "ted_notstop".
+
+```{r ted_talks tokenization, echo=FALSE}
+talks_tokens<- ted_talks%>% #getting data from ted_talks
+  unnest_tokens(word, text) #converting text into tokens
+ted_notstop<- talks_tokens %>% #getting data from talks_tokens
+  anti_join(get_stopwords()) #removing stopwords from tokenized data
+```
+Once the stopwords from the tokenized data is removed we filter frequently used words John McWhorter and Bill Gates separately and plot the top 15 words of both the speakers respectively. 
+
+```{r getting frequently used words for John McWhorter and plotting top 25 words , echo=FALSE}
+John_words<-ted_notstop%>% #getting data from ted_notstop
+  filter(speaker=="John McWhorter")%>% #filtering the tokens with speaker John McWhorter
+  count(speaker,word,sort=TRUE) #frequently used words of John Mcwhorter are displayed in descending order
+John_plot<-John_words %>% #getting data from John_words
+  slice_max(n, n = 15) %>%    #filtering the top 15 frequently used words
+  mutate(word = reorder(word, n)) %>% #reordering of words based on the count of n
+  ggplot(aes(n, word)) +  #plotting the frequency of top 15 words
+  geom_col()+  #represents values of data as bars
+  ggtitle("Frequently used words of John McWhorter") + #adding title to plot
+  theme(plot.title = element_text(hjust = 0.5, size = 8)) #configuring the main title parameters 
+
+Bill_words<-ted_notstop%>% #getting data from ted_notstop
+  filter(speaker=="Bill Gates")%>% #filtering the tokens with speaker Bill Gates
+  count(speaker,word,sort=TRUE) #frequently used words of Bill Gates are displayed in descending order
+Bill_plot<-Bill_words %>% #getting data from Bill_words
+  slice_max(n, n = 15) %>%    #filtering the top 15 frequently used words
+  mutate(word = reorder(word, n)) %>% #reordering of words based on the count of n
+  ggplot(aes(n, word)) + #plotting the frequency of top 15 words
+  geom_col() + #represents values of data as bars
+  ggtitle("Frequently used words of Bill Gates") +#adding title to plot
+  theme(plot.title = element_text(hjust = 0.5, size = 8))  #configuring the main title parameters 
+
+John_plot+Bill_plot #display the two plots side by side
+```
+
+After the individual plotting of both the speakers is done we are plotting the frequently used words of both the speakers whose sum is more than 25. In this plot we get words which are used by only one speaker also as we are considering the sum of count of word to be more than 25.
+
+```{r comparing the two speakers frequently used words whose sum of word count is more than 25, echo=FALSE}
+
+filter_nostop<-talks_tokens%>% #getting data from talks_tokens
+  filter(speaker %in% c("John McWhorter", "Bill Gates"))%>% #filtering the tokens of two speakers John McWhorter and Bill Gates
+  anti_join(get_stopwords())#removing stopwords from the filtered tokenaized data
+ filter_nostop%>% count(speaker, word)%>% #getting the count of words of the two speakers
+  group_by(word)%>% #grouping the filtered data based on words
+  filter(sum(n)>25)%>% #filtering the words from two speakers whose sum is more than 25
+  ungroup()%>% #ungrouping the grouped data
+  pivot_wider(names_from = "speaker", values_from = "n", values_fill = 0)%>% #arranging the data as a wider table
+  ggplot(aes(x=`Bill Gates`, y=`John McWhorter`))+ #plotting the frequently used words of two speakers
+   geom_abline(color="red", size=1, alpha=0.8, lty=2)+ #adding reference line to the plot
+  geom_text_repel(aes(label=word), max.overlaps=250) + #adding text to the plot
+   ggtitle("Comparing frequently used words of Bill Gates and John McWhorter")+ #adding main title to the plot
+   theme(plot.title = element_text(hjust = 0.5)) #configuring the parameters of main title
+
+```
+
+We are now performing sentiment analysis of the tokens for both John McWhorter and Bill Gates. We get several different sentiments while using "nrc" lexicon in the get_sentiments() function. The output of sentiments is stored as a dataframe in wide format.
+
+```{r Binding the frequently used words of John McWhorter and Bill Gates and obtaining the sentiments count of their words, echo=FALSE}
+
+John_filter<- filter_nostop %>% filter(speaker %in% c("John McWhorter")) #filtering John McWhorter TED talks
+Bill_filter<-filter_nostop %>%filter(speaker %in% c("Bill Gates")) #filtering Bill Gates TED talks
+talks_filtered<- bind_rows(John_filter, Bill_filter) #combining the filtered talks of both the speakers
+#write.xlsx(talks_filtered, file="Filtered talks.xlsx", sheetName = "Sheet1") #writing the filtered data to xlsx for reference
+sentiments<-talks_filtered %>% inner_join(get_sentiments("nrc"), by="word") %>%#getting sentiments of the words by using nrc lexicon
+  count(speaker, sentiment)%>% #getting count of the sentiments for each speaker
+  pivot_wider(names_from= speaker, values_from=n, values_fill = 0) #displaying the sentiments count of each speaker in wider table form
+sentiments #printing sentiments data
+```
+
+We now plot the sentiments of the two speakers with John McWhorter on y-axis and Bill Gates on x-axis and using the sentiments as criteria of the color.
+
+```{r, echo=FALSE}
+sentiments%>% #extracting data from sentiments
+ ggplot(x= `Bill Gates`, y=`John McWhorter`)+ #taking Bill Gates as x-axis and John McWhorter as y-axis
+  geom_point(aes(`Bill Gates`, `John McWhorter`,color=`sentiment` ))+ #passing Bill Gates and John McWhorter as x and y parameters and giving color as factor of sentiments
+ggtitle("Association between the sentiments of two speakers") +# adding title to the plot
+  theme(plot.title = element_text(hjust = 0.5)) #aligning plot title to center
+
+```
+
+By using the sentiments data frame, we calculate the odds ratio and log odds ratio for the sentiments of the two speakers and store them under new columns OR and log_OR respectively.
+
+```{r computing the log odds of the sentiments and plotting them, echo=FALSE}
+log_odds_ratio <-sentiments%>% #getting data from sentiments
+  mutate(OR = compute_OR(`Bill Gates`,`John McWhorter`, correction = FALSE), log_OR = log(OR), sentiment=reorder(sentiment, log_OR)) #Calculating Odds Ratio and storing in table under new column OR; calculating log of Odds Ratio and storing under new column log_OR, arranging the sentiments according to log_OR
+log_odds_ratio#printing the output
+```
+
+Once the Log Odds Ratio is obtained we plot the sentiments on x-axis and log odds ratio on y-axis and from plot we can get the positive and negative log odds ratio of the sentiments.
+
+```{r plotting of logs ratio of sentiments, echo=FALSE}
+log_odds_ratio%>% #getting data from log_odds_ratio table
+  ggplot(aes(sentiment, log_OR, fill = log_OR<0))+
+# plotting the graph for sentiments and log_OR with sentiments as x-axis and log_OR as y-axis
+ geom_col(show.legend = FALSE)+
+          #showing data with respect to y-axis
+  ylab("Log odds ratio")+ #adding label name to y-axis
+  scale_y_continuous(limits = c(-0.5, 1))+ #setting the y-axis limits
+ggtitle("Log Odds Ratio of sentiments of two speakers") + #adding title to the plot
+  theme(plot.title = element_text(hjust = 0.5))+ #aligning the title of plot to center
+  coord_flip() + #flips the plot such that x-axis is displayed vertically and y-axis horizontally
+  scale_fill_manual(name = "", values = c("lightblue", "darkgrey")) #filling the colors of the plot 
+```
+
+<span style="color:blue;">**DISCUSSION**</span>
+
+From the analysis of log odds ratio plot we can conclude that John Mcwhorter's TED talks has more of joy and positive sentiment then Bill Gates, and disgust sentiment present more in Bill Gates TED talks. We also compared and plotted the frequently used words of the two speakers together, by taking the overall sum of how many times a word is spoke irrespective of the speaker. And from the "Comparing frequently used words of Bill Gates and John McWhorter" plot we can see that the highest commonly used word of John is language and Bill Gates is people, when we check the plots of "Frequently used words of John McWhorter" and "Frequently used words of Bill Gates" we can observe language and people with the highest count respectively from which we can conclude that no data was lost while comparing the words of the two speakers. One limitation is the number of TED talks of the two speakers are not equal which is a drawback while comparing sentiments and log odds ratio of sentiments. We can further do analysis by calculating the percentage of sentiments of the talks to the number of talks of each speaker for each sentiment as this can be used by an organizer and decide which speaker to prefer based on the situation.
+
+
